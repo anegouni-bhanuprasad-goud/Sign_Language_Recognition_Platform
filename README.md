@@ -8,7 +8,6 @@
 
 A real-time AI-powered sign language recognition system that translates sign language gestures into text using computer vision and deep learning. Built as a major project by students of Mahaveer Institute of Science and Technology.
 
-![Sign Language Recognition Demo](https://via.placeholder.com/800x400/4CAF50/FFFFFF?text=Sign+Language+Recognition+System)
 
 ## 🌟 Features
 
