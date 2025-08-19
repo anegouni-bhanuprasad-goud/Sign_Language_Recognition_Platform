@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Sign Language Recognition - AI Predictor</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+
+    <!-- Mediapipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+
+    <!-- Custom CSS/JS -->
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/script.js" defer></script>
+</head>
+
+<body>
+    <header class="header">
+        <div class="nav-header">
+            <h1 class="header-h1"><i class="fas fa-hands"></i> Sign Language Recognition System</h1>
+            <div class="nav-controls">
+                <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                    <i id="theme-icon" class="fas fa-moon"></i>
+                </button>
+                <button class="menu-toggle" id="menuToggle">&#9776;</button>
+            </div>
+        </div>
+        <p>Real-time AI-powered sign language detection using your webcam or uploaded video</p>
+        <nav class="nav" id="navMenu">
+            <ul class="nav-links">
+                <li><a href="/" class="active">Home</a></li>
+                <li><a href="/features">Features</a></li>
+                <li><a href="/about">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+
+    <div class="container">
+        <div class="main-content">
+            <div class="camera-section"> <!-- Mode Selection -->
+                <div class="mode-selection">
+                    <button class="mode-btn active" id="liveModeBtn" onclick="switchMode('live')">
+                        <i class="fas fa-video"></i> Live Camera
+                    </button>
+                    <button class="mode-btn" id="uploadModeBtn" onclick="switchMode('upload')">
+                        <i class="fas fa-upload"></i> Upload Video
+                    </button>
+                </div> <!-- Live Camera Controls -->
+                <div class="controls" id="liveControls">
+                    <button class="btn btn-primary" id="startCameraBtn" onclick="startCamera()">
+                        <i class="fas fa-camera"></i> Start Camera
+                    </button>
+                    <button class="btn btn-success" id="startPredictionBtn" onclick="startPrediction()" disabled
+                        style="display: none;">
+                        <i class="fas fa-play"></i> Start Prediction
+                    </button>
+                    <button class="btn btn-danger" id="stopPredictionBtn" onclick="stopPrediction()" disabled
+                        style="display: none;">
+                        <i class="fas fa-stop"></i> Stop Prediction
+                    </button>
+                    <button class="btn btn-secondary" id="stopCameraBtn" onclick="stopCamera()" disabled
+                        style="display: none;">
+                        <i class="fas fa-camera-slash"></i> Stop Camera
+                    </button>
+                </div>
+
+                <!-- Video Upload Controls -->
+                <div class="controls" id="uploadControls" style="display: none;">
+                    <div class="upload-section">
+                        <input type="file" id="videoFileInput" accept="video/*" onchange="handleVideoUpload(event)">
+                        <label for="videoFileInput" class="btn btn-primary upload-btn">
+                            <i class="fas fa-cloud-upload-alt"></i> Choose Video File
+                        </label>
+                        <button class="btn btn-success" id="analyzeBtn" onclick="analyzeUploadedVideo()" disabled>
+                            <i class="fas fa-play"></i> Analyze Video
+                        </button>
+                        <button class="btn btn-danger" id="cancelUploadBtn" style="display: none;">
+                            <i class="fas fa-times-circle"></i> Cancel Upload
+                        </button>
+                    </div>
+                </div>
+
+                <div class="status-section">
+                    <div class="frame-counter" id="frameCounter">Frames Captured: 0 / 60</div>
+                    <div id="predictionStatus" class="live-indicator" style="display: none;">
+                        <div class="live-dot"></div>
+                        LIVE PREDICTION
+                    </div>
+                    <div id="uploadStatus" class="upload-indicator" style="display: none;">
+                        <div class="upload-dot"></div>
+                        ANALYZING VIDEO
+                    </div>
+                </div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing 3 seconds of frames and making prediction...</p>
+                </div>
+
+                <div class="video-container">
+                    <div class="video-wrapper">
+                        <h3 id="videoTitle"><i class="fas fa-camera"></i> Live Camera Feed</h3>
+                        <video id="videoElement" autoplay muted playsinline></video>
+                        <video id="uploadedVideo" controls style="display: none;"></video>
+                    </div>
+                    <div class="video-wrapper" id="canvasWrapper">
+                        <h3><i class="fas fa-magic"></i> MediaPipe Holistic Detection</h3>
+                        <canvas id="outputCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage">
+                    <!-- Error messages will be displayed here -->
+                </div>
+
+
+                <div class="prediction-section" id="predictionSection">
+                    <div class="prediction-result">
+                        <h3>Current Prediction</h3>
+                        <div class="sign-word" id="signWord">-</div>
+                        <div class="confidence" id="confidence">Waiting for prediction...</div>
+                    </div>
+                </div>
+
+                <div class="predicted-output" id="predictedOutput"
+                    style="display: none; margin-top: 10px; font-weight: bold; color: var(--primary); font-size: 1.1rem;">
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPredictions">0</div>
+                    <div class="stat-label">Total Predictions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="fps">0</div>
+                    <div class="stat-label">FPS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="accuracy">98%</div>
+                    <div class="stat-label">Model Accuracy</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="records-section">
+            <div class="records-list">
+                <h3 style="margin-bottom: 20px;"><i class="fas fa-history"></i> Prediction History</h3>
+                <div id="recordsList">
+                    <p style="text-align: center; color: #6c757d;">Start camera or upload a video to see predictions!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Crafted with ❤️ and passion - A Major Project by MISTians</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>
